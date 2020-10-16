@@ -24,12 +24,12 @@ class LanguageModel:
         if n_gram == 1 and smoothing_type == 'kneser-ney':
             raise Exception('for kneser-ney smoothing, n-gram must greater than 1!')
 
-        with open(words_file_path, 'r') as json_file:
+        with open(words_file_path, 'r', encoding='utf-8') as json_file:
             self.word_list = json.load(json_file)
         self.word_list.append('UNK')
 
     def train(self):
-        with open(self.corpus_path, 'r') as json_file:
+        with open(self.corpus_path, 'r', encoding='utf-8') as json_file:
             training_data = json.load(json_file)
 
         if self.n_gram == 1:
@@ -44,7 +44,7 @@ class LanguageModel:
                     if self.most_frequent_unigram['freq'] < self.unigram_frequency[token]:
                         self.most_frequent_unigram = {'token': token, 'freq': self.unigram_frequency[token]}
 
-            with open('unigram_frequency.json', 'w') as json_file:
+            with open('data/unigram_frequency.json', 'w') as json_file:
                 json.dump(self.unigram_frequency, json_file, ensure_ascii=False)
 
         if self.n_gram == 2:
@@ -69,7 +69,7 @@ class LanguageModel:
                             'freq': self.bigram_frequency[word1][word2]
                         }
 
-            with open('bigram_frequency.json', 'w') as json_file:
+            with open('data/bigram_frequency.json', 'w') as json_file:
                 json.dump(self.bigram_frequency, json_file, ensure_ascii=False)
 
             if self.smoothing_type == 'kneser-ney':
@@ -84,7 +84,7 @@ class LanguageModel:
                             self.unigrams_before_words[word2] = set()
                         self.unigrams_before_words[word2].add(word1)
 
-                with open('unigrams_before_words.json', 'w') as json_file:
+                with open('data/unigrams_before_words.json', 'w') as json_file:
                     json.dump(list(self.unigrams_before_words), json_file, ensure_ascii=False)
 
         if self.n_gram == 3:
@@ -113,7 +113,7 @@ class LanguageModel:
                             'freq': self.trigram_frequency[word1][word2][word3]
                         }
 
-            with open('trigram_frequency.json', 'w') as json_file:
+            with open('data/trigram_frequency.json', 'w') as json_file:
                 json.dump(self.trigram_frequency, json_file, ensure_ascii=False)
 
             if self.smoothing_type == 'kneser-ney':
@@ -129,7 +129,7 @@ class LanguageModel:
                             self.bigrams_before_words[word3] = set()
                         self.bigrams_before_words[word3].add((word1, word2))
 
-                with open('bigrams_before_words.json', 'w') as json_file:
+                with open('data/bigrams_before_words.json', 'w') as json_file:
                     json.dump(list(self.bigrams_before_words), json_file, ensure_ascii=False)
 
     def smoothing(self, ngram_words: Tuple) -> float:
@@ -239,7 +239,7 @@ class LanguageModel:
             return self.most_frequent_trigrams[tokens[-2]][tokens[-1]]['token']
 
     def evaluate(self, validation_sentences_path: str) -> float:
-        with open(validation_sentences_path, 'r') as json_file:
+        with open(validation_sentences_path, 'r', encoding='utf-8') as json_file:
             validation_sentences = json.load(json_file)
 
         word_error_rates = []
@@ -264,7 +264,7 @@ class LanguageModel:
 
                 word_error_rates.append(wer(' '.join(validation_tokens), ' '.join(generated_words[1:])))
 
-        with open('word_error_rates.json', 'w') as json_file:
+        with open('data/word_error_rates.json', 'w') as json_file:
             json.dump(word_error_rates, json_file)
 
         return sum(word_error_rates) / len(word_error_rates)
@@ -272,12 +272,12 @@ class LanguageModel:
 
 if __name__ == '__main__':
     language_model = LanguageModel(
-        corpus_path='training_sentences.json',
-        words_file_path='most_frequent_words.json',
+        corpus_path='data/training_sentences.json',
+        words_file_path='data/most_frequent_words.json',
         n_gram=2,
         smoothing_type='laplace'
     )
     language_model.train()
 
-    # avg_wer = language_model.evaluate('validation_sentences.json')
+    # avg_wer = language_model.evaluate('data/validation_sentences.json')
     # print(avg_wer)

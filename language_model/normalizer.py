@@ -42,7 +42,7 @@ def mask_numbers(sentence):
 
 
 def normalizing_training_set():
-    with open('data/train.json', 'r') as json_file:
+    with open('data/train.json', 'r', encoding='utf-8') as json_file:
         training_data = json.load(json_file)
 
     parsivar_normalizer = parsivar.Normalizer()
@@ -84,7 +84,7 @@ def normalizing_training_set():
 
             all_sentence_tokens.append(words)
 
-    with open('words_frequency.json', 'w') as json_file:
+    with open('data/words_frequency.json', 'w') as json_file:
         json.dump(word_frequency, json_file, ensure_ascii=False)
 
     frequency_rank_threshold = 10000
@@ -104,17 +104,17 @@ def normalizing_training_set():
                 final_sentence_tokens.append(token)
         final_all_sentence_tokens.append(final_sentence_tokens)
 
-    with open('training_sentences.json', 'w') as json_file:
+    with open('data/training_sentences.json', 'w') as json_file:
         json.dump(final_all_sentence_tokens, json_file, ensure_ascii=False)
-    with open('most_frequent_words.json', 'w') as json_file:
+    with open('data/most_frequent_words.json', 'w') as json_file:
         json.dump(most_frequent_words, json_file, ensure_ascii=False)
 
 
 def normalizing_validation_set():
-    with open('data/valid.json', 'r') as json_file:
+    with open('data/valid.json', 'r', encoding='utf-8') as json_file:
         validation_data = json.load(json_file)
 
-    with open('most_frequent_words.json', 'r') as json_file:
+    with open('data/most_frequent_words.json', 'r', encoding='utf-8') as json_file:
         most_frequent_words = json.load(json_file)
 
     parsivar_normalizer = parsivar.Normalizer()
@@ -160,7 +160,7 @@ def normalizing_validation_set():
 
             all_sentence_tokens.append(words)
 
-    with open('validation_sentences.json', 'w') as json_file:
+    with open('data/validation_sentences.json', 'w') as json_file:
         json.dump(all_sentence_tokens, json_file, ensure_ascii=False)
 
 
