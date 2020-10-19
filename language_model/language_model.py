@@ -246,19 +246,16 @@ class LanguageModel:
         for validation_sentence in validation_sentences:
             validation_tokens = ['<s>'] + validation_sentence + ['</s>']
 
-            generated_words = ['<s>']
             try:
-                generated_words.append(validation_sentence[0])
+                generated_words = ['<s>', validation_sentence[0]]
 
-                generated_words.append(self.generate(generated_words))
                 while generated_words[-1] != '</s>' and len(generated_words) < 35:
                     generated_words.append(self.generate(generated_words))
 
                 word_error_rates.append(wer(' '.join(validation_tokens), ' '.join(generated_words)))
             except KeyError:
-                generated_words.append('<s>')
+                generated_words = ['<s>', '<s>']
 
-                generated_words.append(self.generate(generated_words))
                 while generated_words[-1] != '</s>' and len(generated_words) < 35:
                     generated_words.append(self.generate(generated_words))
 
