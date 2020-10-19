@@ -2,11 +2,24 @@ import json
 import math
 from typing import List, Tuple
 
-from jiwer import wer
-
 
 def logarithm(num):
     return math.log10(num) if num else -math.inf
+
+
+def wer(truth_words: List[str], generated_words: List[str]) -> float:
+    dp = [[0 for __ in range(len(generated_words) + 1)] for _ in range(len(truth_words) + 1)]
+
+    for i in range(len(truth_words) + 1):
+        for j in range(len(generated_words) + 1):
+            if i == 0 or j == 0:
+                dp[0][j] = max(i, j)
+            elif truth_words[i - 1] == generated_words[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1]
+            else:
+                dp[i][j] = min(dp[i - 1][j - 1], dp[i][j - 1], dp[i - 1][j]) + 1
+
+    return dp[len(truth_words)][len(generated_words)] / len(truth_words)
 
 
 class LanguageModel:
@@ -252,14 +265,14 @@ class LanguageModel:
                 while generated_words[-1] != '</s>' and len(generated_words) < 35:
                     generated_words.append(self.generate(generated_words))
 
-                word_error_rates.append(wer(' '.join(validation_tokens), ' '.join(generated_words)))
+                word_error_rates.append(wer(validation_tokens, generated_words))
             except KeyError:
                 generated_words = ['<s>', '<s>']
 
                 while generated_words[-1] != '</s>' and len(generated_words) < 35:
                     generated_words.append(self.generate(generated_words))
 
-                word_error_rates.append(wer(' '.join(validation_tokens), ' '.join(generated_words[1:])))
+                word_error_rates.append(wer(validation_tokens, generated_words[1:]))
 
         with open('data/word_error_rates.json', 'w') as json_file:
             json.dump(word_error_rates, json_file)
