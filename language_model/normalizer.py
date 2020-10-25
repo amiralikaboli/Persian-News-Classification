@@ -147,6 +147,7 @@ def normalizing_validation_set():
 
             if len(words) == 0:
                 continue
+
             final_sentence_tokens = []
             for ind, word in enumerate(words):
                 if word == 'NUM':
@@ -158,7 +159,7 @@ def normalizing_validation_set():
                 else:
                     final_sentence_tokens.append(word)
 
-            all_sentence_tokens.append(words)
+            all_sentence_tokens.append(final_sentence_tokens)
 
     with open('data/validation_sentences.json', 'w') as json_file:
         json.dump(all_sentence_tokens, json_file, ensure_ascii=False)
