@@ -214,7 +214,7 @@ class LanguageModel:
                 return alpha * len(self.bigrams_before_words[ngram_words[2]]) / sum(
                     [len(self.bigrams_before_words[word]) for word in self.bigrams_before_words])
 
-    def prob_log(self, tokens: List[str]) -> float:
+    def prob_log(self, tokens: List) -> float:
         overall_prob = 0
 
         if self.n_gram == 1:
@@ -241,7 +241,7 @@ class LanguageModel:
 
         return overall_prob
 
-    def generate(self, tokens: List[str]) -> str:
+    def generate(self, tokens: List) -> str:
         if self.n_gram == 1:
             return self.most_frequent_unigram['token']
 
