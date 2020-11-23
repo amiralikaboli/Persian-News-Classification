@@ -9,16 +9,16 @@ class TextCleaner:
     def __init__(self):
         self.number_replacement = 'N'
 
-        self.avg_word_length = 275
+        self.avg_sentence_length = 165
 
         self.punctuations = [
             '!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '/', ':', ';', '<', '=', '>', '@', '[',
-            '\\', ']', '^', '_', '`', '{', '|', '}', '~', '£', '«', '®', '±', '»', '¼', '½', '×', 'ã', 'é', '÷', 'ø',
-            'č', 'ı', 'š', 'ˈ', '˜', '˝', 'α', 'И', 'и', 'к', 'н', '٪', '٫', '٬', '–', '—', '’', '“', '”', '…', '‹',
-            '›', '™', '♫', '❤', '《', '》', '', '﴾', '﴿', '：', '�'
+            '\\', ']', '^', '_', '`', '{', '|', '}', '~', '£', '¤', '§', '©', '«', '®', '°', '±', '²', '´', '¸', '»',
+            '¼', '½', '¾', '×', '÷', 'ˈ', '˜', '˝', '٪', '٫', '٬', '‐', '–', '—', '‘', '’', '“', '”', '„', '…', '″',
+            '‹', '›', '™', '↑', '→', '↓', '⋅', '⌘', '▪', '◄', '○', '♫', '✓', '❤', '《', '》', '爆', '者', '被', '\uf020',
+            '\uf04f', '\uf05f', '\uf076', '\uf0a7', '\uf0fc', '﴾', '﴿', '：', '�'
         ]
-        self.diacritics_pattern = re.compile(
-            "[\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652\u0653\u0654\u0655\u0670\u06d6\u06da]")
+        self.diacritics_pattern = re.compile("[\u064B-\u065e\u0670\u0674\u06c3\u06d4-\u06ed]")
         self.emojis_pattern = re.compile(
             "["
             u"\U0001F600-\U0001F64F"
@@ -28,13 +28,21 @@ class TextCleaner:
             "]+",
             flags=re.UNICODE
         )
-        self.english_characters_pattern = re.compile("[AАBCСDEFGHIJKКLMNOОPРQRSTUVWXYZaаbcсdefghijklmnopрqrstuvwxyуz]")
+        self.latin_characters_pattern = re.compile(
+            "["
+            "\u0041-\u007a"
+            "\u00c0-\u036f"
+            "\u0400-\u050f"
+            "\u0342-\u03ff"
+            "]"
+        )
         self.numbers_pattern = re.compile("[0-9]+")
         self.space_patterns = [
             (re.compile("[\u202c\u2005\u2009\u2029\u2066\u3000\ufe0f]"), ' '),
             (re.compile("[\f\r\t\n]"), ' '),
-            (re.compile("[\u200a\u200e\u200f\u206d\xa0\xad]"), '\u200c'),
-            (re.compile("[\u200b\u200d\u202a\u202b\u2003\u2060\u2063\u2067\u2069\ufeff\x18]"), ''),
+            (re.compile("[\u001f\u009d\u200a\u200e\u200f\u206d\xa0\xad]"), '\u200c'),
+            (re.compile("[\u007f\u0085\u061c\u200b\u200d\u202a\u202b\u206f\u2003"
+                        "\u2028\u2060\u2063\u2067\u2069\ufeff\ufffc\x18]"), ''),
         ]
 
         self.normalizer = parsivar.Normalizer()
@@ -50,8 +58,8 @@ class TextCleaner:
     def remove_emojis(self, text: str) -> str:
         return self.emojis_pattern.sub(r'', text)
 
-    def remove_english_characters(self, text: str) -> str:
-        return self.english_characters_pattern.sub(r'', text)
+    def remove_latin_characters(self, text: str) -> str:
+        return self.latin_characters_pattern.sub(r'', text)
 
     def mask_numbers(self, text: str) -> str:
         text = text.replace('٥', '5')
@@ -63,8 +71,12 @@ class TextCleaner:
             text = pattern.sub(repl, text)
         return text
 
+    @staticmethod
+    def tokenize(text):
+        return list(text) if text[0] != ' ' else list(text[1:])
+
     def clean_text(self, text: str) -> str:
-        text = self.remove_english_characters(text)
+        text = self.remove_latin_characters(text)
         text = self.remove_punctuations(text)
         text = self.remove_diacritics(text)
         text = self.remove_emojis(text)
@@ -73,14 +85,23 @@ class TextCleaner:
         text = self.normalizer.space_correction(text)
         text = self.mask_numbers(text)
 
+        text = text.replace('؛', '،')
         text = text.replace('?', '؟')
         text = text.replace('  ', ' ')
 
         return text
 
     @staticmethod
-    def tokenize(text: str) -> list:
-        return list(text)
+    def get_sentences(text):
+        separator_indexes = [match.start() for match in re.finditer("[.؟]", text)]
+        start_sentence_indexes = [0] + [separator_index + 1 for separator_index in separator_indexes] + [len(text)]
+
+        sentences = [
+            text[start_sentence_indexes[ind]:start_sentence_indexes[ind + 1]]
+            for ind in range(len(start_sentence_indexes) - 1)
+        ]
+
+        return sentences
 
     def clean_training_set(self):
         training_data = []
@@ -88,28 +109,30 @@ class TextCleaner:
         for ind in range(data.shape[0]):
             training_data.append(str(data['text'][ind]))
 
-        training_data_tokens = []
+        training_sentences = []
         unique_chars = {'<s>', '</s>'}
         for training_text in training_data:
-            if len(training_text.split()) > self.avg_word_length:
-                continue
-
             cleaned_text = self.clean_text(training_text)
-            tokens = ['<s>'] + self.tokenize(cleaned_text) + ['</s>']
+            sentences = self.get_sentences(cleaned_text)
 
-            unique_chars = unique_chars.union(tokens)
+            for sentence in sentences:
+                if len(sentence) < 5 or len(sentence) > self.avg_sentence_length:
+                    continue
 
-            training_data_tokens.append(tokens)
+                sentence_chars = ['<s>', *self.tokenize(sentence), '</s>']
+
+                unique_chars = unique_chars.union(sentence_chars)
+
+                training_sentences.append(sentence_chars)
 
         index2char = sorted(list(unique_chars))
         char2index = {ch: ind for ind, ch in enumerate(index2char)}
 
-        for tokens in training_data_tokens:
-            for ind, ch in enumerate(tokens):
-                tokens[ind] = char2index[ch]
+        for ind, training_sentence in enumerate(training_sentences):
+            training_sentences[ind] = [char2index[ch] for ch in training_sentence]
 
-        with open('data/cleaned_train_tokens.json', 'w') as json_file:
-            json.dump(training_data_tokens, json_file, ensure_ascii=False)
+        with open('data/train_sentences.json', 'w') as json_file:
+            json.dump(training_sentences, json_file, ensure_ascii=False)
         with open('data/index2char.json', 'w') as json_file:
             json.dump(index2char, json_file, ensure_ascii=False)
         with open('data/char2index.json', 'w') as json_file:
@@ -126,20 +149,23 @@ class TextCleaner:
         with open('data/char2index.json', 'r', encoding='utf-8') as json_file:
             char2index = json.load(json_file)
 
-        test_data_tokens = []
+        test_sentences = []
         for test_text in test_data:
-            if len(test_text.split()) > self.avg_word_length:
-                continue
-
             cleaned_text = self.clean_text(test_text)
-            tokens = ['<s>'] + self.tokenize(cleaned_text) + ['</s>']
+            sentences = self.get_sentences(cleaned_text)
 
-            wordlevel_tokens = [char2index[ch] for ch in tokens]
+            for sentence in sentences:
+                if len(sentence) < 5 or len(sentence) > self.avg_sentence_length:
+                    continue
 
-            test_data_tokens.append(wordlevel_tokens)
+                sentence_chars = ['<s>', *self.tokenize(sentence), '</s>']
 
-        with open('data/cleaned_test_tokens.json', 'w') as json_file:
-            json.dump(test_data_tokens, json_file, ensure_ascii=False)
+                indexed_sentence_chars = [char2index[ch] for ch in sentence_chars if ch in char2index]
+
+                test_sentences.append(indexed_sentence_chars)
+
+        with open('data/test_sentences.json', 'w') as json_file:
+            json.dump(test_sentences, json_file, ensure_ascii=False)
 
 
 if __name__ == '__main__':
