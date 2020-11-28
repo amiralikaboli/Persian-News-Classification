@@ -30,7 +30,7 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     with open('data/train_sentences.json', 'r', encoding='utf-8') as json_file:
-        train_sentences = json.load(json_file)[:100]
+        train_sentences = json.load(json_file)
     with open('data/char2index.json', 'r', encoding='utf-8') as json_file:
         char2index = json.load(json_file)
     with open('data/index2char.json', 'r', encoding='utf-8') as json_file:

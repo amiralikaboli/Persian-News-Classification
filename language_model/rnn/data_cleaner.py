@@ -62,7 +62,6 @@ class TextCleaner:
         return self.latin_characters_pattern.sub(r'', text)
 
     def mask_numbers(self, text: str) -> str:
-        text = text.replace('٥', '5')
         text = self.numbers_pattern.sub(f' {self.number_replacement} ', text)
         return re.sub(f"{self.number_replacement}( *{self.number_replacement})*", self.number_replacement, text)
 
@@ -71,22 +70,46 @@ class TextCleaner:
             text = pattern.sub(repl, text)
         return text
 
+    def unify_alphabet_unicodes(self, text):
+        text = self.normalizer.sub_alphabets(text)
+
+        text = text.replace('٥', '5')
+        text = text.replace('ﭻ', 'چ')
+        text = text.replace('ﮋ', 'ژ')
+        text = text.replace('ﷲ', 'لله')
+        text = text.replace('ﺄ', 'ا')
+        text = text.replace('ﺅ', 'و')
+        text = text.replace('ﺋ', 'ئ')
+        text = text.replace('ﺌ', 'ئ')
+        text = text.replace('ﺎ', 'ا')
+        text = text.replace('ﺡ', 'ح')
+        text = text.replace('ﺹ', 'ص')
+        text = text.replace('ﻌ', 'ع')
+        text = text.replace('ﻘ', 'ق')
+        text = text.replace('ﻟ', 'ل')
+        text = text.replace('ﻻ', 'لا')
+        text = text.replace('ﻼ', 'لا')
+        text = text.replace('ۆ', 'و')
+
+        text = text.replace('؛', '،')
+        text = text.replace('?', '؟')
+
+        return text
+
     @staticmethod
     def tokenize(text):
         return list(text) if text[0] != ' ' else list(text[1:])
 
     def clean_text(self, text: str) -> str:
+        text = self.unify_spaces(text)
+        text = self.unify_alphabet_unicodes(text)
+        text = self.normalizer.space_correction(text)
         text = self.remove_latin_characters(text)
         text = self.remove_punctuations(text)
         text = self.remove_diacritics(text)
         text = self.remove_emojis(text)
-        text = self.unify_spaces(text)
-        text = self.normalizer.sub_alphabets(text)
-        text = self.normalizer.space_correction(text)
         text = self.mask_numbers(text)
 
-        text = text.replace('؛', '،')
-        text = text.replace('?', '؟')
         text = text.replace('  ', ' ')
 
         return text
