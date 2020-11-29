@@ -68,3 +68,10 @@ class LanguageModel:
             log_prob += math.log10(probs[indexed_sentence[ind]])
 
         return log_prob
+
+
+if __name__ == '__main__':
+    with open('hyper_parameters.json', 'r') as json_file:
+        hyper_parameters = json.load(json_file)
+
+    lm = LanguageModel('data/checkpoints/2020-11-28 20_16_27.077470.pth', hyper_parameters)
