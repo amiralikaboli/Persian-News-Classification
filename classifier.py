@@ -7,7 +7,7 @@ import numpy as np
 from sklearn import svm
 from sklearn.metrics import roc_curve, auc
 
-from classification.text_cleaner import TextCleaner
+from text_cleaner import TextCleaner
 
 
 class Classifier:

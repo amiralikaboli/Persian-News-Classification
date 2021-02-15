@@ -1,7 +1,0 @@
-{
-    "hidden_size": 256,
-    "num_layers": 2,
-    "lr": 1e-5,
-    "num_epochs": 100,
-    "val_frac": 0.3
-}
